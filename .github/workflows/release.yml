@@ -21,6 +21,12 @@ jobs:
       - name: Run tests
         run: ./build/tests/math_tests
 
+      - name: Ad-hoc code sign
+        run: |
+          xattr -cr build/app/mathapp.app
+          codesign --force --deep --sign - build/app/mathapp.app
+          codesign --verify --verbose build/app/mathapp.app
+
       - name: Package as DMG
         run: |
           mkdir -p dist_tmp
