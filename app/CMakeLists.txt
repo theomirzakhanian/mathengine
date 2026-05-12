@@ -1,4 +1,3 @@
-# Dear ImGui library (no CMakeLists provided, so we build it ourselves)
 add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -15,7 +14,7 @@ target_link_libraries(imgui PUBLIC glfw)
 
 find_package(OpenGL REQUIRED)
 
-add_executable(mathapp
+set(MATHAPP_SOURCES
     main.cpp
     app.cpp
     graph_renderer.cpp
@@ -27,7 +26,26 @@ add_executable(mathapp
     tools.cpp
     datalab.cpp
     implicit.cpp
+    file_picker_win32.cpp
 )
+
+if(APPLE)
+    # macOS .app bundle
+    add_executable(mathapp MACOSX_BUNDLE ${MATHAPP_SOURCES})
+    set_target_properties(mathapp PROPERTIES
+        MACOSX_BUNDLE_BUNDLE_NAME "MathEngine"
+        MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.0"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.theomirzakhanian.mathengine"
+        MACOSX_BUNDLE_INFO_STRING "MathEngine v1.0 - desktop math engine"
+        MACOSX_BUNDLE_COPYRIGHT "© 2026 Theo Mirzakhanian"
+    )
+elseif(WIN32)
+    add_executable(mathapp WIN32 ${MATHAPP_SOURCES})
+    # Use console subsystem during development; WIN32 hides console
+else()
+    add_executable(mathapp ${MATHAPP_SOURCES})
+endif()
 
 target_include_directories(mathapp PRIVATE ${CMAKE_SOURCE_DIR}/third_party)
 
@@ -39,4 +57,11 @@ target_link_libraries(mathapp PRIVATE
 
 if(APPLE)
     target_link_libraries(mathapp PRIVATE "-framework Cocoa" "-framework IOKit")
+elseif(WIN32)
+    target_link_libraries(mathapp PRIVATE comdlg32 user32 gdi32 shell32)
 endif()
+
+install(TARGETS mathapp
+    BUNDLE DESTINATION .
+    RUNTIME DESTINATION bin
+)

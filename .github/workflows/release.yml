@@ -1,0 +1,98 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j --config Release
+
+      - name: Run tests
+        run: ./build/tests/math_tests
+
+      - name: Package as DMG
+        run: |
+          mkdir -p dist_tmp
+          cp -R build/app/mathapp.app dist_tmp/MathEngine.app
+          ln -s /Applications dist_tmp/Applications
+          hdiutil create -volname "MathEngine" -srcfolder dist_tmp -ov -format UDZO -fs HFS+ MathEngine-macOS.dmg
+          rm -rf dist_tmp
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MathEngine-macOS
+          path: MathEngine-macOS.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build -j --config Release
+
+      - name: Run tests
+        run: build\tests\Release\math_tests.exe
+
+      - name: Package as ZIP
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist
+          Copy-Item build\app\Release\mathapp.exe dist\MathEngine.exe
+          Copy-Item README.md dist\
+          Copy-Item LICENSE dist\
+          Compress-Archive -Path dist\* -DestinationPath MathEngine-Windows.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MathEngine-Windows
+          path: MathEngine-Windows.zip
+
+  release:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: MathEngine-macOS
+      - uses: actions/download-artifact@v4
+        with:
+          name: MathEngine-Windows
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            MathEngine-macOS.dmg
+            MathEngine-Windows.zip
+          generate_release_notes: true
+          body: |
+            # MathEngine release
+
+            ## Downloads
+
+            - **macOS**: `MathEngine-macOS.dmg` — open the DMG and drag MathEngine.app to Applications. On first launch you may need to right-click → Open to bypass Gatekeeper (the app is not code-signed yet).
+            - **Windows**: `MathEngine-Windows.zip` — extract and run `MathEngine.exe`. Windows SmartScreen may warn since it isn't code-signed; click "More info" → "Run anyway."
+
+            ## What's inside
+
+            A standalone C++ math engine with 9 tabs: Graph, Calculator, 3D, Matrix, Data Lab, Implicit, Design, Tools, Console. See the README for details.

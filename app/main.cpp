@@ -342,7 +342,6 @@ int main() {
         if (state.bg_image_pick_requested) {
             state.bg_image_pick_requested = false;
 #ifdef __APPLE__
-            // Use AppleScript to show native file picker
             FILE* pipe = popen(
                 "osascript -e 'try' "
                 "-e 'POSIX path of (choose file of type {\"png\", \"jpg\", \"jpeg\", \"bmp\", \"gif\", \"tga\", \"tiff\"} "
@@ -351,11 +350,8 @@ int main() {
             if (pipe) {
                 char buf[1024] = {0};
                 if (fgets(buf, sizeof(buf), pipe)) {
-                    // Strip trailing newline
                     size_t len = strlen(buf);
-                    while (len > 0 && (buf[len-1] == '\n' || buf[len-1] == '\r')) {
-                        buf[--len] = '\0';
-                    }
+                    while (len > 0 && (buf[len-1] == '\n' || buf[len-1] == '\r')) buf[--len] = '\0';
                     if (len > 0) {
                         snprintf(state.bg_image_path, sizeof(state.bg_image_path), "%s", buf);
                         state.bg_image_load_requested = true;
@@ -363,6 +359,15 @@ int main() {
                 }
                 pclose(pipe);
             }
+#elif defined(_WIN32)
+            extern int win32_open_file_dialog(char* out, size_t out_size);
+            char buf[1024] = {0};
+            if (win32_open_file_dialog(buf, sizeof(buf))) {
+                snprintf(state.bg_image_path, sizeof(state.bg_image_path), "%s", buf);
+                state.bg_image_load_requested = true;
+            }
+#else
+            // Linux: TODO use zenity or kdialog
 #endif
         }
 
