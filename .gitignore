@@ -18,3 +18,5 @@ compile_commands.json
 MathEngine-*.dmg
 MathEngine-*.zip
 dist_tmp/
+packaging/MathEngine.iconset/
+packaging/icon_master_1024.png

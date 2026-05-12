@@ -31,7 +31,11 @@ set(MATHAPP_SOURCES
 
 if(APPLE)
     # macOS .app bundle
-    add_executable(mathapp MACOSX_BUNDLE ${MATHAPP_SOURCES})
+    set(MATHAPP_ICON ${CMAKE_SOURCE_DIR}/packaging/MathEngine.icns)
+    set_source_files_properties(${MATHAPP_ICON} PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources"
+    )
+    add_executable(mathapp MACOSX_BUNDLE ${MATHAPP_SOURCES} ${MATHAPP_ICON})
     set_target_properties(mathapp PROPERTIES
         MACOSX_BUNDLE_BUNDLE_NAME "MathEngine"
         MACOSX_BUNDLE_BUNDLE_VERSION "1.0.0"
@@ -39,6 +43,7 @@ if(APPLE)
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.theomirzakhanian.mathengine"
         MACOSX_BUNDLE_INFO_STRING "MathEngine v1.0 - desktop math engine"
         MACOSX_BUNDLE_COPYRIGHT "© 2026 Theo Mirzakhanian"
+        MACOSX_BUNDLE_ICON_FILE "MathEngine.icns"
     )
 elseif(WIN32)
     add_executable(mathapp WIN32 ${MATHAPP_SOURCES})
