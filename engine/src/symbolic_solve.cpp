@@ -10,6 +10,7 @@
 #include <set>
 #include <sstream>
 #include <algorithm>
+#include <functional>
 
 namespace mathengine {
 
