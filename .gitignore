@@ -1,0 +1,17 @@
+build/
+*.o
+*.a
+*.dylib
+*.so
+*.dll
+*.exe
+.DS_Store
+imgui.ini
+*.png
+!app/icon.png
+.cache/
+compile_commands.json
+*.tmp
+*.swp
+.vscode/
+.idea/
