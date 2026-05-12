@@ -15,3 +15,6 @@ compile_commands.json
 *.swp
 .vscode/
 .idea/
+MathEngine-*.dmg
+MathEngine-*.zip
+dist_tmp/
