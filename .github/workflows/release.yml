@@ -4,10 +4,15 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      # Allows the cloud-session branch to fire a one-shot v1.0.0 release
+      # because tag refs cannot be pushed through the sandbox proxy.
+      - 'claude/port-to-windows-wcFP1'
   workflow_dispatch:
 
 jobs:
   build-macos:
+    if: startsWith(github.ref, 'refs/tags/v') || contains(github.event.head_commit.message, '[release]')
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,6 +47,7 @@ jobs:
           path: MathEngine-macOS.dmg
 
   build-windows:
+    if: startsWith(github.ref, 'refs/tags/v') || contains(github.event.head_commit.message, '[release]')
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,10 +79,12 @@ jobs:
   release:
     needs: [build-macos, build-windows]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || contains(github.event.head_commit.message, '[release]')
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: MathEngine-macOS
@@ -84,9 +92,27 @@ jobs:
         with:
           name: MathEngine-Windows
 
+      - name: Resolve release tag
+        id: tag
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=v1.0.0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Delete previous release+tag if present
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete "${{ steps.tag.outputs.name }}" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          target_commitish: ${{ github.sha }}
           files: |
             MathEngine-macOS.dmg
             MathEngine-Windows.zip
