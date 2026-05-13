@@ -3,6 +3,7 @@
 #include "mathengine/taylor.h"
 #include "mathengine/parser.h"
 #include "mathengine/eval.h"
+#include <cmath>
 
 using namespace mathengine;
 

@@ -3,6 +3,7 @@
 #include "mathengine/symbolic_solve.h"
 #include "mathengine/parser.h"
 #include "mathengine/eval.h"
+#include <algorithm>
 
 using namespace mathengine;
 
